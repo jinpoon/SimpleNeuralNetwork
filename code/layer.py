@@ -3,11 +3,11 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 import math
 
-class Activation(Enum):
-	noActivation = 1
-	Sigmoid = 2
-	ReLU = 3
-	Tanh = 4
+#class Activation(Enum):
+#	noActivation = 1
+#	Sigmoid = 2
+#	ReLU = 3
+#	Tanh = 4
 
 class Layer(object): #abstract class of neural layers
 	def __init__(self):
@@ -44,52 +44,82 @@ class OutputLayer(Layer):
 
 class Linear(Layer): #linear layer, contain
 
-	def __init__(self, numInput, numOutput, activation=Activation.Sigmoid):
+	def __init__(self, numInput, numOutput):
 		super(Linear, self).__init__()
 		self.numInput = numInput
 		self.numOutput = numOutput
-		self.activation = activation
 
 		rg = math.sqrt(6) / (numOutput + numInput);
 		self.weight = np.random.rand(numOutput, numInput) * 2 * rg - rg;
 		self.bias = np.zeros(shape=(numOutput, 1));
 		self.lastoutput = []
 		self.lastinput = []
-		self.lr = 0.05
+		self.lr = 0.1
 
 	def set_learning_rate(self, lr):
 		self.lr = lr
 
 	def activate(self, x):
-		if self.activation == Activation.Sigmoid:
-			return 1/(1 + np.exp(-x))
-		else:
-			print "Didn't implement this activation yet!"
+		return 1/(1 + np.exp(-x))
 
 	def forward(self, input):
-		assert input.shape == (self.numInput, 1)
+		assert input.shape[0] == self.numInput
 		x = np.dot(self.weight, input) + self.bias
-		self.lastoutput = self.activate(x)
+		self.lastoutput = x
 		self.lastinput = input
 		return self.lastoutput
 		
 	def backward(self, gradInput):
-		assert gradInput.shape == (self.numOutput, 1)
-		if self.activation == Activation.Sigmoid :
-			d1 = self.lastoutput * (1 - self.lastoutput)
-			gradient_b = gradInput* d1
-			gradient_w = np.dot((gradInput* d1), np.transpose(self.lastinput))
-			gradOutput = np.dot(np.transpose(self.weight), gradInput* d1)
-			self.update(gradient_w, gradient_b)
-			return gradOutput
-		else:
-			print "Not implemented activation! output zero gradients"
-			return np.zeros((self.numOutput, self.Input))
+		assert gradInput.shape[0] == self.numOutput
+
+		gradient_b = gradInput
+		gradient_w = np.dot(gradInput, np.transpose(self.lastinput)) #might cause problem with batch
+		gradOutput = np.dot(np.transpose(self.weight), gradInput)
+
+		self.update(gradient_w, gradient_b)
+
+		return gradOutput
 
 	def update(self, gradient_w, gradient_b):
 		self.weight = self.weight - self.lr * gradient_w
 		self.bias = self.bias - self.lr * gradient_b
+	
+class Activation(Layer):
+	"""layer of activation"""
+	def __init__(self, activation="sigmoid", size=-1):
+		super(Activation, self).__init__()
+		self.activation = activation
+		self.lastoutput = []
+
+		self.numInput = self.numOutput = size #to meet the assertion in nn.add()
+
+	def forward(self, input):
+		if self.activation == 'sigmoid':
+			self.lastoutput = 1/(1 + np.exp(-input))
+		else:
+			self.lastoutput = []
+		return self.lastoutput
+
+	def backward(self, gradInput):
+		if self.activation == 'sigmoid':
+			return self.lastoutput * (1 - self.lastoutput) * gradInput
+		else:
+			return []
 		
+
+
+class BatchNorm(Layer):
+	"""docstring for BatchNorm"""
+	def __init__(self):
+		super(BatchNorm, self).__init__()
+
+	def forward(self, input):
+		pass
+
+	def backward(self, input):
+		pass
+		
+
 '''
 class Softmax_CrossLayer(OutputLayer):
 	"""docstring for SoftmaxLayer"""

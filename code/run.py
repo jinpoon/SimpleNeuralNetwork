@@ -1,7 +1,7 @@
 import numpy as np
 from dataloader import dataloader
 from loss import Softmax_Cross_entropy
-from layer import Linear
+from layer import Linear, Activation
 from nn import Net
 from trainer import Trainer
 import pdb
@@ -18,22 +18,25 @@ test_data_path = '../data/nolabel_test.txt'
 test_label_path = '../data/testlabel'
 
 def main():
-	train_loader = dataloader(train_data_path, train_label_path, val_data_path, val_label_path)
+	train_loader = dataloader(train_data_path, train_label_path, val_data_path, val_label_path, batchsize=1)
 	net = Net()
 
 	nn_input_size = train_loader.traindata.shape[1]
 	num_of_class = 10
 
 	l1 = Linear(nn_input_size, 100)
+	a1 = Activation('sigmoid', 100)
 	l2 = Linear(100, num_of_class)
+	a2 = Activation('sigmoid', num_of_class)
 
 	net.add(l1)
+	net.add(a1)
 	net.add(l2)
-
+	net.add(a2)
 
 	loss = Softmax_Cross_entropy()
 
-	trainer = Trainer(0, train_loader, None, loss, net)
+	trainer = Trainer(train_loader, None, loss, net)
 
 	for i in range(epoch):
 		print "epoch %d"%i 

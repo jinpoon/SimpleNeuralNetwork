@@ -24,13 +24,16 @@ class dataloader(object):
 		self.traintarget =self.traintarget[perm]
 
 	def feed(self):
-		if self.idx >= self.traindatasize:
+		if self.idx + self.batchsize >= self.traindatasize:
 			return
-		etarget = np.zeros(shape = (10, 1))
-		etarget[self.traintarget[self.idx]] = 1
-		tdata = ((self.traindata[self.idx]).reshape(784,1), etarget)
-		self.idx += 1
-		return tdata
+		batch = []
+		for i in range(self.idx, self.idx + self.batchsize):
+			etarget = np.zeros(shape = (10, 1))
+			etarget[self.traintarget[self.idx]] = 1
+			tdata = ((self.traindata[self.idx]).reshape(784,1), etarget)
+			batch.append(tdata)
+		self.idx += self.batchsize
+		return batch
 
 	def reset(self):
 		perm = np.random.permutation(len(self.traintarget))
