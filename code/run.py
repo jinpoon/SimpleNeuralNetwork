@@ -26,10 +26,10 @@ def main():
 
 	l1 = Linear(nn_input_size, 100)
 	l2 = Linear(100, num_of_class)
-	#sf = SoftmaxLayer(num_of_class)
+
 	net.add(l1)
 	net.add(l2)
-	#net.add(sf)
+
 
 	loss = Softmax_Cross_entropy()
 

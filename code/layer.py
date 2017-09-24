@@ -52,11 +52,10 @@ class Linear(Layer): #linear layer, contain
 
 		rg = math.sqrt(6) / (numOutput + numInput);
 		self.weight = np.random.rand(numOutput, numInput) * 2 * rg - rg;
-		print self.weight
 		self.bias = np.zeros(shape=(numOutput, 1));
 		self.lastoutput = []
 		self.lastinput = []
-		self.lr = 0.1
+		self.lr = 0.05
 
 	def set_learning_rate(self, lr):
 		self.lr = lr
