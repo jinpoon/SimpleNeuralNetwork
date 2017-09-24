@@ -18,7 +18,7 @@ test_data_path = '../data/nolabel_test.txt'
 test_label_path = '../data/testlabel'
 
 def main():
-	train_loader = dataloader(train_data_path, train_label_path, val_data_path, val_label_path, batchsize=1)
+	train_loader = dataloader(train_data_path, train_label_path, val_data_path, val_label_path, batchsize=8)
 	net = Net()
 
 	nn_input_size = train_loader.traindata.shape[1]

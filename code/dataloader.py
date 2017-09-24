@@ -10,6 +10,7 @@ class dataloader(object):
 		self.traintarget = np.loadtxt(traintargetpath, dtype='int64')
 		self.traindatasize = len(self.traintarget)
 		self.idx = 0
+		self.featuresize = 784
 
 
 		self.valdatapath = valdatapath
@@ -26,14 +27,17 @@ class dataloader(object):
 	def feed(self):
 		if self.idx + self.batchsize >= self.traindatasize:
 			return
-		batch = []
+		batchx = np.zeros(shape=(self.featuresize, self.batchsize))
+		batchy = np.zeros(shape=(10, self.batchsize))
+
 		for i in range(self.idx, self.idx + self.batchsize):
 			etarget = np.zeros(shape = (10, 1))
 			etarget[self.traintarget[self.idx]] = 1
-			tdata = ((self.traindata[self.idx]).reshape(784,1), etarget)
-			batch.append(tdata)
+			batchx[:, i-self.idx] = (self.traindata[self.idx]).reshape(self.featuresize)
+			batchy[:, i-self.idx] =  etarget.reshape(10)
+			
 		self.idx += self.batchsize
-		return batch
+		return (batchx, batchy)
 
 	def reset(self):
 		perm = np.random.permutation(len(self.traintarget))
@@ -55,7 +59,7 @@ class dataloader(object):
 		for i in range(0, valdatasize):
 			etarget = np.zeros(shape = (10, 1))
 			etarget[valtarget[i]] = 1
-			tdata = (valdata[i].reshape(784, 1), etarget)
+			tdata = (valdata[i].reshape(self.featuresize, 1), etarget)
 			pair_list.append(tdata)
 
 		return pair_list		

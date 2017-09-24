@@ -38,5 +38,5 @@ class Net(object):
 		for layer in self.layers[::-1]:
 			gradOutput = layer.backward(gradOutput)
 			#print gradOutput
-
+		#print (self.layers[0].weight)[0,0]
 		return gradOutput

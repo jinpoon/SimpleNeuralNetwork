@@ -22,7 +22,7 @@ class Softmax_Cross_entropy(loss_function):
 		self.last_loss = 0
 		
 	def forward(self, nnoutput, target):
-		loss = -np.sum(target * np.log(np.exp(nnoutput) /np.sum(np.exp(nnoutput))))
+		loss = -np.sum(target * np.log(np.exp(nnoutput) /np.sum(np.exp(nnoutput), 0)), 0)
 		self.last_nnoutput = nnoutput
 		return loss
 		

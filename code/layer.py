@@ -72,9 +72,11 @@ class Linear(Layer): #linear layer, contain
 	def backward(self, gradInput):
 		assert gradInput.shape[0] == self.numOutput
 
-		gradient_b = gradInput
-		gradient_w = np.dot(gradInput, np.transpose(self.lastinput)) #might cause problem with batch
+		gradient_b = np.mean(gradInput, 1).reshape((self.numOutput, 1))
+
+		gradient_w = np.dot(gradInput, np.transpose(self.lastinput))  #might cause problem with batch
 		gradOutput = np.dot(np.transpose(self.weight), gradInput)
+		#print gradOutput
 
 		self.update(gradient_w, gradient_b)
 
@@ -82,7 +84,10 @@ class Linear(Layer): #linear layer, contain
 
 	def update(self, gradient_w, gradient_b):
 		self.weight = self.weight - self.lr * gradient_w
+		#print self.bias
 		self.bias = self.bias - self.lr * gradient_b
+		#print self.bias
+		#exit(1)
 	
 class Activation(Layer):
 	"""layer of activation"""

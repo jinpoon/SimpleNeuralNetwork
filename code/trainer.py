@@ -10,20 +10,20 @@ class Trainer(object):
 		self.net = net
 
 	def train(self):
-		bz = (float)(self.dataloader.batchsize)
 		batch = self.dataloader.feed()
 		sum_loss = 0.0
 		nb_of_class = 10
 		while batch:
-			batch_grad = np.zeros(shape = (nb_of_class, 1))
-			for data in batch:
-				nnoutput = self.net.forward(data[0])
-				loss = self.loss_function.forward(nnoutput, data[1])
-				sum_loss += loss
-				gradInput = self.loss_function.backward(data[1])
-				batch_grad = batch_grad + gradInput
-			batch_grad = batch_grad / bz
-			self.net.backward(batch_grad)
+			#print "batch training"
+			batchx = batch[0]
+			batchy= batch[1]
+
+			nnoutput = self.net.forward(batchx)
+			loss = self.loss_function.forward(nnoutput, batchy)
+			sum_loss += np.sum(loss)
+			grads = self.loss_function.backward(batchy)
+
+			self.net.backward(grads)
 			batch = self.dataloader.feed() 
 
 		print "avg loss: %f"%(sum_loss/(float)(self.dataloader.traindatasize))
@@ -31,16 +31,15 @@ class Trainer(object):
 
 	def get_train_acc(self):
 		correct = 0.0
-		bz = (float)(self.dataloader.batchsize)
 		batch = self.dataloader.feed()
 		while batch:
-			for data in batch:
-				nnoutput = self.net.forward(data[0])
+			batchx = batch[0]
+			batchy= batch[1]
+			
+			nnoutput = self.net.forward(batchx)
+			correct += np.sum(np.argmax(nnoutput, 0) == np.argmax(batchy, 0));
+			batch = self.dataloader.feed()
 
-				if np.argmax(nnoutput) == np.argmax(data[1]):
-					correct += 1.0				
-
-			batch = self.dataloader.feed() 
 		self.dataloader.reset()
 		return (correct/(float)(self.dataloader.traindatasize))
 		
