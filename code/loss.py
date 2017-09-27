@@ -27,6 +27,4 @@ class Softmax_Cross_entropy(loss_function):
 		return loss
 		
 	def backward(self, target):
-		#print "Loss gradient:"
-		#print -(target - self.last_nnoutput)
 		return -(target - self.last_nnoutput)

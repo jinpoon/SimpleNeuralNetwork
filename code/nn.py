@@ -15,6 +15,17 @@ class Net(object):
 		#super(Net, self).__init__()
 		self.layers = []
 		self.last_output = []
+		self._is_training = True
+
+	@property
+	def is_training(self):
+		return self._is_training
+
+	@is_training.setter
+	def is_training(self, new):
+		self._is_training = False
+		for layer in self.layers:
+			layer._is_training = new
 
 	def add(self, layer):
 		if len(self.layers) and layer.numInput != self.layers[-1].numOutput:
@@ -36,7 +47,8 @@ class Net(object):
 	def backward(self, gradInput):
 		gradOutput = gradInput
 		for layer in self.layers[::-1]:
-			gradOutput = layer.backward(gradOutput)
+			gradOutput = layer.backward(gradInput)
+			gradInput = gradOutput
 			#print gradOutput
 		#print (self.layers[0].weight)[0,0]
 		return gradOutput

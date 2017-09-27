@@ -3,15 +3,11 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 import math
 
-#class Activation(Enum):
-#	noActivation = 1
-#	Sigmoid = 2
-#	ReLU = 3
-#	Tanh = 4
+eps = 1e-34
 
 class Layer(object): #abstract class of neural layers
 	def __init__(self):
-		pass
+		self._is_training = True
 
 	@abstractmethod
 	def forward(self, input):
@@ -22,7 +18,6 @@ class Layer(object): #abstract class of neural layers
 		return 
 		
 class OutputLayer(Layer):
-	"""abstract class for output layer"""
 	def __init__(self):
 		super(OutputLayer, self).__init__()
 		self.input = []
@@ -43,8 +38,7 @@ class OutputLayer(Layer):
 		return self.form_grads(gradInput);
 
 class Linear(Layer): #linear layer, contain
-
-	def __init__(self, numInput, numOutput):
+	def __init__(self, numInput, numOutput, lr=0.1, momentum=0.0):
 		super(Linear, self).__init__()
 		self.numInput = numInput
 		self.numOutput = numOutput
@@ -54,7 +48,11 @@ class Linear(Layer): #linear layer, contain
 		self.bias = np.zeros(shape=(numOutput, 1));
 		self.lastoutput = []
 		self.lastinput = []
-		self.lr = 0.1
+		self.lr = lr
+
+		self.wv = np.zeros((numOutput, numInput))
+		self.bv = np.zeros((numOutput, 1))
+		self.momentum = momentum
 
 	def set_learning_rate(self, lr):
 		self.lr = lr
@@ -72,22 +70,20 @@ class Linear(Layer): #linear layer, contain
 	def backward(self, gradInput):
 		assert gradInput.shape[0] == self.numOutput
 
-		gradient_b = np.mean(gradInput, 1).reshape((self.numOutput, 1))
+		gradient_b = np.sum(gradInput, 1).reshape((self.numOutput, 1))
 
-		gradient_w = np.dot(gradInput, np.transpose(self.lastinput))  #might cause problem with batch
+		gradient_w = np.dot(gradInput, np.transpose(self.lastinput))
 		gradOutput = np.dot(np.transpose(self.weight), gradInput)
-		#print gradOutput
 
 		self.update(gradient_w, gradient_b)
 
 		return gradOutput
 
 	def update(self, gradient_w, gradient_b):
-		self.weight = self.weight - self.lr * gradient_w
-		#print self.bias
-		self.bias = self.bias - self.lr * gradient_b
-		#print self.bias
-		#exit(1)
+		self.wv = -self.lr * gradient_w + self.momentum * self.wv
+		self.weight = self.weight + self.wv
+		self.bv = -self.lr * gradient_b + self.momentum * self.bv
+		self.bias = self.bias + self.bv
 	
 class Activation(Layer):
 	"""layer of activation"""
@@ -101,6 +97,9 @@ class Activation(Layer):
 	def forward(self, input):
 		if self.activation == 'sigmoid':
 			self.lastoutput = 1/(1 + np.exp(-input))
+		elif self.activation == 'relu':
+			self.lastoutput = input
+			self.lastoutput[input < 0] = 0
 		else:
 			self.lastoutput = []
 		return self.lastoutput
@@ -108,6 +107,9 @@ class Activation(Layer):
 	def backward(self, gradInput):
 		if self.activation == 'sigmoid':
 			return self.lastoutput * (1 - self.lastoutput) * gradInput
+		elif self.activation == 'relu':
+			gradInput[self.lastoutput == 0] = 0
+			return gradInput
 		else:
 			return []
 		
@@ -115,41 +117,67 @@ class Activation(Layer):
 
 class BatchNorm(Layer):
 	"""docstring for BatchNorm"""
-	def __init__(self):
+	def __init__(self, numInput):
 		super(BatchNorm, self).__init__()
+		self.numInput = numInput
+		self.numOutput = numInput
+
+		self.gamma = np.ones((numInput, 1))
+		self.beta = np.zeros((numInput, 1))
+		self.lastinput = []
+		self.lastxhat = []
+		self.lr = 0.1 #learning rate
+		#self.momentum = 0.1
 
 	def forward(self, input):
-		pass
+		if self._is_training == False:
+			u, b, var, xh = self.cache
+			xh = (input-u) / np.sqrt(var + eps)
+			return self.gamma * xh + self.beta
 
-	def backward(self, input):
-		pass
+
+		self.lastinput = input
+		D, bz = input.shape
+
+		u = (1. / bz) * (np.sum(input, 1)).reshape(D, 1)
+		b = input - u
+		var = (1. / bz) * (np.sum(b*b, 1)).reshape(D, 1)
+
+		xh = b / np.sqrt(var + eps)
+		'''print b
+		print np.sqrt(var + eps)
+		print xh
+		exit(1)'''
+
+		self.cache = (u, b, var, xh)
+
+		return self.gamma * xh + self.beta
+
+	def backward(self, gradInput):
+		D, bz = gradInput.shape
+		u, b, var, xh = self.cache 
+
+		den = var + eps
+
+		grad_beta = (np.sum(gradInput, 1)).reshape(D, 1)
+		grad_gamma = np.sum(xh * gradInput, 1).reshape(D, 1)
+
+		grad_h = gradInput * self.gamma
+		#print grad_h
 		
-
-'''
-class Softmax_CrossLayer(OutputLayer):
-	"""docstring for SoftmaxLayer"""
-	def __init__(self, inputsize):
-		super(SoftmaxLayer, self).__init__()
-		self.numInput = inputsize
-		self.inputsize = inputsize
-		self.lastoutput = []
-
-	def form_output(self, intput):
-		self.lastoutput =  np.exp(intput) /np.sum(np.exp(intput))
-		return self.lastoutput
-
-	def form_grads(self, gradInput):
-		gradOutput = np.zeros(shape=(self.inputsize,1))
-		for i in range(0, self.inputsize):
-			for j in range(0, self.inputsize):
-				if i==j:
-					gradOutput[i, 0] += self.lastoutput[i, 0] * (1 - self.lastoutput[i, 0])
-				else:
-					gradOutput[i, 0] += -self.lastoutput[i, 0] * self.lastoutput[j, 0]
-
-		gradOutput = gradOutput*gradInput
+		gradOutput =(1./bz) * (1./np.sqrt(den)) * (bz*grad_h - np.sum(grad_h, 1).reshape(D, 1) - 
+			xh * (np.sum(grad_h * xh, 1).reshape(D, 1))) 
+		
+		self.update(grad_gamma, grad_beta)
 		return gradOutput
-'''
+
+
+	def update(self, grad_g, grad_b):
+		#print grad_g.shape
+		self.gamma = self.gamma - self.lr * grad_g
+		#print self.gamma.shape
+		self.beta = self.beta - self.lr * grad_b
+
 
 
 

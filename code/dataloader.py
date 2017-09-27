@@ -15,9 +15,9 @@ class dataloader(object):
 
 		self.valdatapath = valdatapath
 		self.valtargetpath = valtargetpath
-		#self.testdata = np.loadtxt(testdatapath, delimiter',')
-		#self.testtarget = np.loadtxt(testtargetpath, dtype='int64')
-		#self.testtarget =len(self.testtarget)
+
+		self.testdatapath = testdatapath
+		self.testtargetpath = testtargetpath
 
 	def permute(self):
 		perm = np.random.permutation(len(self.traintarget))
@@ -32,8 +32,8 @@ class dataloader(object):
 
 		for i in range(self.idx, self.idx + self.batchsize):
 			etarget = np.zeros(shape = (10, 1))
-			etarget[self.traintarget[self.idx]] = 1
-			batchx[:, i-self.idx] = (self.traindata[self.idx]).reshape(self.featuresize)
+			etarget[self.traintarget[i]] = 1
+			batchx[:, i-self.idx] = (self.traindata[i]).reshape(self.featuresize)
 			batchy[:, i-self.idx] =  etarget.reshape(10)
 			
 		self.idx += self.batchsize
@@ -62,4 +62,17 @@ class dataloader(object):
 			tdata = (valdata[i].reshape(self.featuresize, 1), etarget)
 			pair_list.append(tdata)
 
-		return pair_list		
+		return pair_list
+
+	def get_test_datapair(self):
+		testdata = np.loadtxt(self.testdatapath, delimiter=',')
+		testtarget = np.loadtxt(self.testtargetpath, dtype='int64')
+
+		pair_list = []
+		for i in range(0, len(testtarget)):
+			etarget = np.zeros(shape = (10, 1))
+			etarget[testtarget[i]] = 1
+			tdata = (testdata[i].reshape(self.featuresize, 1), etarget)
+			pair_list.append(tdata)
+
+		return pair_list			
