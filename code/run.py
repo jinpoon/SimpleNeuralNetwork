@@ -32,9 +32,18 @@ def main():
 	b2 = BatchNorm(num_of_class)
 	a2 = Activation('sigmoid', num_of_class)
 
+	lm = Linear(100, 100)
+	bm = BatchNorm(100)
+	am = Activation('sigmoid', 100)	
+
 	net.add(l1)
 	net.add(b1) #add batch normalization
 	net.add(a1)
+
+	net.add(lm)
+	net.add(bm)
+	net.add(am)
+	
 	net.add(l2)
 	net.add(b2) #add batch normalization
 	net.add(a2)
